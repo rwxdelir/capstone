@@ -43,11 +43,10 @@ const myPromise = new Promise((res, reject) => {
     } 
 
     zip.loadAsync(data).then(() => {
-      var key, obj;
-      var date;
+      var folderSize = Object.keys(zip.folder("courses").files).length - 1;
+      var parsedFiles = 0;
 
       zip.folder("courses").forEach(function (relative, file) {
-        
         fcache[relative] = file.date.toJSON();
 
         if (typeof cachedDates[relative] !== 'undefined' 
@@ -58,14 +57,10 @@ const myPromise = new Promise((res, reject) => {
             db[relative] = parseData(text);
           })
         }
+        
+        parsedFiles++
+        if (parsedFiles === folderSize) { res("Resolved") }
       })
-      // Сообщает о завершение считывания архива
-      zip
-        .generateNodeStream({streamFiles:false})
-        .pipe(fs.createWriteStream('out.zip'))
-        .on('finish', function () {
-          res("Resolved")
-        });
     })
   })
 })
@@ -73,7 +68,7 @@ const myPromise = new Promise((res, reject) => {
 myPromise.then(() => {
   fs.writeFileSync("cache.json", JSON.stringify(db));
   fs.writeFileSync("datecache.json", JSON.stringify(fcache));
-
+  console.log(db)
   const readline = require('readline').createInterface({
     input: process.stdin,
     output: process.stdout

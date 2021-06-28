@@ -2,7 +2,6 @@ import {IInsightFacade, InsightResponse, InsightDatasetKind} from "./IInsightFac
 /**
  * This is main programmatic entry point for the project.
  */
-
 export default class InsightFacade implements IInsightFacade {
   public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<InsightResponse> {
     var fs = require("fs");
@@ -11,6 +10,7 @@ export default class InsightFacade implements IInsightFacade {
     var fcache = {};
     var str = [];
     var db = {};
+    var fileChanged: boolean = false;
 
     return new Promise((resolve, reject) => {
       fs.readFile("./../courses.zip", function (err, data) {
@@ -33,9 +33,13 @@ export default class InsightFacade implements IInsightFacade {
             if (typeof cachedDates[relative] !== 'undefined' 
               && cachedDates[relative] == file.date.toJSON()) {
                 db[relative] = cachedDB[relative];
-                parsedFiles++
+                ++parsedFiles;
                 if (parsedFiles === folderSize) {
-                  resolve({code: 204, body: { result: [db]}});
+                  if (fileChanged) {
+                    fs.writeFileSync("cache.json", JSON.stringify(db));
+                    fs.writeFileSync("datecache.json", JSON.stringify(fcache));
+                  }
+                  resolve({code: 204, body: null});
                 }
             } else {
               file.async("string").then(function(text: string) {
@@ -44,8 +48,9 @@ export default class InsightFacade implements IInsightFacade {
                 if (parsedFiles === folderSize) {
                   fs.writeFileSync("cache.json", JSON.stringify(db));
                   fs.writeFileSync("datecache.json", JSON.stringify(fcache));
-                  resolve({code: 204, body: { result: [db]}});
+                  resolve({code: 204, body: null});
                 }
+                fileChanged = true;
               })
             }
           })

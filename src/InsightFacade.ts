@@ -11,16 +11,18 @@ export default class InsightFacade implements IInsightFacade {
     var str = [];
     var db = {};
     var fileChanged: boolean = false;
+    var cachePath = './'+ id + 'cache.json';
+    var datePath = './' + id + 'date.json';
 
     return new Promise((resolve, reject) => {
       fs.readFile("./../courses.zip", function (err, data) {
         if (err) throw err;
          var cachedDB = {}, cachedDates = {};
       
-        if (fs.existsSync('./cache.json') 
-            && fs.existsSync('./datecache.json')) { 
-          cachedDB = require('./cache.json');
-          cachedDates = require('./datecache.json');
+        if (fs.existsSync(cachePath) 
+            && fs.existsSync(datePath)) { 
+          cachedDB = require(cachePath);
+          cachedDates = require(datePath);
         } 
 
         zip.loadAsync(data).then(() => {
@@ -30,14 +32,16 @@ export default class InsightFacade implements IInsightFacade {
           zip.folder("courses").forEach((relative, file) => {
             fcache[relative] = file.date.toJSON();
 
-            if (typeof cachedDates[relative] !== 'undefined' 
+            if (typeof cachedDB != 'undefined'
+              && typeof cachedDates != 'undefined'
+              && typeof cachedDates[relative] !== 'undefined'
               && cachedDates[relative] == file.date.toJSON()) {
-                db[relative] = cachedDB[relative];
+                db[relative] == cachedDB[relative];
                 ++parsedFiles;
                 if (parsedFiles === folderSize) {
                   if (fileChanged) {
-                    fs.writeFileSync("cache.json", JSON.stringify(db));
-                    fs.writeFileSync("datecache.json", JSON.stringify(fcache));
+                    fs.writeFileSync(cachePath, JSON.stringify(db));
+                    fs.writeFileSync(datePath, JSON.stringify(fcache));
                   }
                   resolve({code: 204, body: null});
                 }
@@ -46,8 +50,8 @@ export default class InsightFacade implements IInsightFacade {
                 db[relative] = parseData(text);
                 parsedFiles++
                 if (parsedFiles === folderSize) {
-                  fs.writeFileSync("cache.json", JSON.stringify(db));
-                  fs.writeFileSync("datecache.json", JSON.stringify(fcache));
+                  fs.writeFileSync(cachePath, JSON.stringify(db));
+                  fs.writeFileSync(datePath, JSON.stringify(fcache));
                   resolve({code: 204, body: null});
                 }
                 fileChanged = true;
@@ -70,7 +74,6 @@ export default class InsightFacade implements IInsightFacade {
   public listDatasets(): Promise<InsightResponse> {
     return Promise.reject({code: -1, body: null}) 
   }
-  
 }
 
 function parseData(text: string) {

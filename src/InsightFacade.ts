@@ -4,7 +4,6 @@ import {IInsightFacade, InsightResponse, InsightDatasetKind} from "./IInsightFac
  */
 export default class InsightFacade implements IInsightFacade {
   public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<InsightResponse> {
-    var fs = require("fs");
     var JSZip = require("jszip");
     var zip = new JSZip();
     var fcache = {};
@@ -13,6 +12,7 @@ export default class InsightFacade implements IInsightFacade {
     var fileChanged: boolean = false;
     var cachePath = './'+ id + 'cache.json';
     var datePath = './' + id + 'date.json';
+    var fs = require("fs");
 
     return new Promise((resolve, reject) => {
       fs.readFile("./../courses.zip", function (err, data) {
@@ -64,7 +64,14 @@ export default class InsightFacade implements IInsightFacade {
   }
 
   public removeDataset(id: string): Promise<InsightResponse> {
-    return Promise.resolve({code: 204, body: null});
+    var fs = require("fs");
+    var paths: string[] = ['./' + id + 'cache.json', './' + id + 'date.json'];
+    try {
+      paths.forEach(path => fs.existsSync(path) && fs.unlinkSync(path))
+      return Promise.resolve({code: 204, body: null})
+    } catch (err) {
+      return Promise.resolve({code: 404, body: null})
+    }
   }
 
   public performQuery(query: string): Promise<InsightResponse> {
@@ -96,4 +103,5 @@ function parseData(text: string) {
     firstIndex = 0, secondIndex = 0;
   } return obj;
 }
+
 

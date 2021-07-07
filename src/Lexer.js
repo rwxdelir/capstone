@@ -14,10 +14,12 @@ let Spec = [
   [/^ends with/, "S_OP"],
   [/^does not end with/, "S_OP"],
   [/^sort in ascending order by/, "ORDER"],
+  [/^".*?"/, "STRING"],
   [/^\d+/, "NUMBER"],
   [/^\s/, "WHITESPACE" ],
-  [/^\,/, "WHITESPACE" ],
+  [/^\,/, "COMMA" ],
   [/^\;/, "SEMICOLON" ],
+  [/^\./, "DOT"],
   [/^courses/, "KIND"],
   [/^In/, "KEYWORD"],
   [/^dataset/, "KEYWORD"],
@@ -74,6 +76,10 @@ class Lexer {
         continue;
       }
 
+      if (tokenType == "STRING") {
+        tokenValue.toString();
+      }
+
       return {
         type: tokenType,
         value: tokenValue,
@@ -94,13 +100,16 @@ class Lexer {
 
 const q1 = 'In courses dataset courses, find entries whose Average is greater than 97; show Department and Average; sort in ascending order by Average.'
 
+const q2 = 'In courses dataset courses, find entries whose Average is greater than 90 and Department is \"adhe\" or Average is equal to 95; show Department, ID and Average; sort in ascending order by Average.'
+
 const lexer = new Lexer()
-lexer.init(q1)
+lexer.init(q2)
 for (;;) {
   let token = lexer.getNextToken();
   if (token == null) {
     break;
   }
+
   if (token.type == "WHITESPACE") {
     continue;
   }

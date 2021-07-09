@@ -1,8 +1,13 @@
 import { Lexer } from "./Lexer";
 
 const Spec1 = [
+[
   [["M_KEY", "M_OP", "NUMBER"], "M_CRITERIA"],
   [["S_KEY", "S_OP", "STRING"], "S_CRITERIA"]
+],[
+  [["M_CRITERIA"], "CRITERIA"],
+  [["S_CRITERIA"], "CRITERIA"]
+]
 ]
 
 class Parser {
@@ -24,7 +29,6 @@ class Parser {
       this._tokens.push(lookahead)
       lookahead = lexer.getNextToken();
     }
-    
   }
   
   isTokenizerEnd() {
@@ -36,13 +40,19 @@ class Parser {
     this._token = this._tokens[this._cursor];
   }
   
-  parse() {
+  parse(depth) {
     let buffer = [];
     let start
     let deleteCount = 0;
     let newType = null;
+    let deep = depth;
+    let level = Spec1[deep];
+    console.log(this._tokens)
+    console.log(level)
+    this._cursor = 0;
+    this._token = this._tokens[0]
     while (!this.isTokenizerEnd()) {
-      for (const [types, genericType] of Spec1) {
+      for (const [types, genericType] of level) {
         for (let j = 0; j < types.length; j++) {
           if (types[j] !== this._token.type) {
             buffer = [];
@@ -57,7 +67,7 @@ class Parser {
           this.nextToken();
         }
         if (buffer.length > 0) {
-          //console.log("Start " + start + " Len " + buffer.length)
+          console.log("Start " + start + " Len " + buffer.length)
           this._tokens.splice(start, buffer.length, {
             type: newType,
             value: buffer
@@ -70,9 +80,9 @@ class Parser {
           start = undefined;
         }
       }
-
       this.nextToken();
     }
+//    console.log(this._tokens)
     return this._tokens;
   }
 }
@@ -80,5 +90,8 @@ class Parser {
 let q1 = 'In courses dataset courses, find entries whose Average is greater than 97 and Department is \"adhe\"; show Department and Average; sort in ascending order by Average.'
 
 let parser = new Parser(q1);
-//console.log(parser.parse());
+for (let i = 0; i < 2; i++) {
+  console.log(i)
+  console.log(parser.parse(i));
+}
 

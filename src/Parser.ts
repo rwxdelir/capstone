@@ -18,6 +18,13 @@ const CMD = {
   "In": "DATASET"
 }
 
+enum AST_CMD {
+  'DATASET' = 1,
+  'FILTER',
+  'DISPLAY',
+  'ORDER'
+}
+
 class Parser {
   _tokens = [];
   _cursor;
@@ -32,6 +39,7 @@ class Parser {
     for (;;) {
       if (lookahead == null) { break; }
       if (lookahead.type == "WHITESPACE" || lookahead.value == "and" 
+        || lookahead.value == ","
         || lookahead.value == "whose" ) {
         lookahead = lexer.getNextToken();
         continue;
@@ -138,7 +146,17 @@ class Parser {
 
     return null;
   }
- 
+
+  parseAst(tokenizer) {
+    let ast = [];
+    for (let token of tokenizer) {
+      if (AST_CMD[token.type]) {
+        ast.push(token);
+      }
+    }
+    return ast;
+  }
+  
   parse(depth) {
     let buffer = [];
     let start
@@ -148,6 +166,7 @@ class Parser {
     let level = Spec1[deep];
     this._cursor = 0;
     this._token = this._tokens[0]
+
     if (depth == 0 || depth == 1) {
       while (!this.isTokenizerEnd()) {
         for (const [types, genericType] of level) {
@@ -183,6 +202,7 @@ class Parser {
       this._token = this._tokens[0]
       let buffer = [];
       let start, end;
+
       while (!this.isTokenizerEnd()) {
         start = this._cursor;
         let cmd = this.cmdDisplay() || this.cmdFilter() || this.cmdOrder() || this.cmdDataset()  
@@ -194,11 +214,9 @@ class Parser {
         }
         this.nextToken();
       }
-      return this._tokens
+      return this.parseAst(this._tokens);
     }
   }
 }
       
-let q1 = 'In courses dataset courses, find entries whose Average is greater than 97 and Department is \"adhe\"; show Department and Average; sort in ascending order by Average.'
-
 

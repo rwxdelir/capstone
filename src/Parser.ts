@@ -9,15 +9,14 @@ const Spec1 = [
   [["S_CRITERIA"], "CRITERIA"],
   [["M_KEY"], "KEY"],
   [["S_KEY"], "KEY"]
-]
-]
+]]
 
 const CMD = {
   "findentries": "FILTER",
-  "sort in ascending order"
+  "sort in ascending order by": "ORDER",
+  "show": "DISPLAY",
+  "In": "DATASET"
 }
-
-
 
 class Parser {
   _tokens = [];
@@ -44,7 +43,7 @@ class Parser {
   }
   
   isTokenizerEnd() {
-    return this._tokens[this._cursor].type == "DOT" || this._cursor >= this._tokens.length - 1
+    return this._token.type == "DOT" || this._cursor >= this._tokens.length - 1
   }
 
   nextToken() {
@@ -54,22 +53,92 @@ class Parser {
     }
   }
 
-  spotCmd() {
-    let buffer = "";
-
-    while(!this.isTokenizerEnd() && this._token.type === "KEYWORD") {
-      buffer += this._token.value;
+  cmdFilter() {
+    let cmd = "";
+    while (this._token.value == "find" 
+      || this._token.value == "entries")  {
+      cmd += this._token.value;
       this.nextToken();
     }
-
-    let cmd = CMD[buffer];
-    if (cmd) {
-      return cmd 
+    let filter = CMD[cmd];
+    let buffer = [];
+    if (filter) {
+      while(this._token.type == "CRITERIA") {
+        buffer.push(this._token);
+        this.nextToken();
+      }
+      return {
+        type: filter,
+        value: buffer
+      } 
     }
 
     return null;
   }
   
+  cmdOrder() {
+    let cmd = "";
+    if (this._token.type == "ORDER") {
+      cmd += this._token.value;
+      this.nextToken();
+    }
+    
+    let order = CMD[cmd];
+    let buffer = [];
+    if (order) {
+      while(this._token.type == "KEY") {
+        buffer.push(this._token);
+        this.nextToken();
+      }
+      return {
+        type: order,
+        value: buffer
+      }
+    }
+
+    return null;
+  }
+
+  cmdDisplay() {
+    let cmd = "";
+    if (this._token.value == "show") {
+      cmd = this._token.value;
+      this.nextToken();
+    }
+    
+    let display = CMD[cmd];
+    let buffer = [];
+    if (display) {
+      while (this._token.type == "KEY") {
+        buffer.push(this._token);
+        this.nextToken();
+      }
+      return {
+        type: display, 
+        value: buffer
+      }
+    }
+    
+    return null;
+  }
+  
+  cmdDataset() {
+    if (this._token.value == "In") {
+      let buffer = [];
+      while (true) {
+        buffer.push(this._token)
+        if (this._token.type == "INPUT") {break;}
+        this.nextToken();
+      }
+      return {
+        type: "DATASET", 
+        value: buffer 
+      }
+    }
+
+    return null;
+  }
+ 
   parse(depth) {
     let buffer = [];
     let start
@@ -96,7 +165,6 @@ class Parser {
             this.nextToken();
           }
           if (buffer.length > 0) {
-            console.log(buffer)
             this._tokens.splice(start, buffer.length, {
               type: newType,
               value: buffer
@@ -114,44 +182,23 @@ class Parser {
       this._cursor = 0;
       this._token = this._tokens[0]
       let buffer = [];
-      let command = "";
       let start, end;
       while (!this.isTokenizerEnd()) {
-        command = this.spotCmd();
-        if (command == "FILTER") {
-          start = this._cursor - 2;
-          while (this._token.type !== "SEMICOLON") {
-            buffer.push(this._token);
-            this.nextToken();
-          }
-          this._tokens.splice(start, buffer.length + 3, {
-            type: command, 
-            value: buffer
-          })
-          buffer = [];
-        } else if (command == "ORDER") {
-          start = this._cursor - 1;
-          while (this._token.type !== "DOT") {
-            buffer.push(this._token);
-            this.nextToken()
-          }
-          this._tokens.splice(start, buffer.length + 1, {
-            type: command,
-            value: buffer
-          })
+        start = this._cursor;
+        let cmd = this.cmdDisplay() || this.cmdFilter() || this.cmdOrder() || this.cmdDataset()  
+        if (cmd) {
+          end = this._cursor
+          this._tokens.splice(start, (end - start), cmd);
+          this._cursor = start;
+          this._token = this._tokens[start];        
         }
-
         this.nextToken();
       }
+      return this._tokens
     }
-    return this._tokens;
   }
 }
-
+      
 let q1 = 'In courses dataset courses, find entries whose Average is greater than 97 and Department is \"adhe\"; show Department and Average; sort in ascending order by Average.'
 
-let parser = new Parser(q1);
-for (let i = 0; i < 3; i++) {
-  console.log(parser.parse(i));
-}
 

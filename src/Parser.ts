@@ -25,7 +25,7 @@ enum AST_CMD {
   'ORDER'
 }
 
-class Parser {
+export class Parser {
   _tokens = [];
   _cursor;
   _token;
@@ -71,7 +71,7 @@ class Parser {
     let filter = CMD[cmd];
     let buffer = [];
     if (filter) {
-      while(this._token.type == "CRITERIA") {
+      while(this._token.type == "CRITERIA" || this._token.value == "or") {
         buffer.push(this._token);
         this.nextToken();
       }
@@ -219,4 +219,17 @@ class Parser {
   }
 }
       
-
+//let q1 = 'In courses dataset courses, find entries whose Average is greater than 97 and Department is \"adhe\"; show Department and Average; sort in ascending order by Average.'
+//let q2 = 'In courses dataset courses, find entries whose Average is greater than 90 and Department is \"adhe\" or Average is equal to 95; show Department, ID and Average; sort in ascending order by Average.'
+//
+//let parser = new Parser(q2);
+//let result;
+//for (let i = 0; i < 3; i++) {
+//  result = parser.parse(i);
+//}
+//var fs = require("fs");
+//fs.writeFileSync('./data.json', JSON.stringify(result, null, 2)); 
+//
+//console.log(result[1].value.value)
+//console.log(result[2].value.value)
+//console.log(result[3].value.value)

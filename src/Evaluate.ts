@@ -12,15 +12,31 @@ const KEYS = {
   'UUID'      : 'id'          // string 
 }
 
+const VALID_KEYS = {
+  'subject'  : 'dept',
+  'course'   : 'id',
+  'avg'      : 'avg',
+  'professor': 'instructor',
+  'title'    : 'title',
+  'pass'     : 'pass',
+  'fail'     : 'fail',
+  'audit'    : 'audit',
+  'id'       : 'uuid'
+}
+
 class Evaluate {
   _db;
   _ast;
   _cursor = 0;
   _node;
+  _datasetKind;
   constructor(db, ast) {
      this._db = db;
      this._ast = ast;
      this._node = this._ast[this._cursor];
+
+     /* TODO: Implement DATASET */
+     this._datasetKind = "courses";
   }
 
   nextNode() {
@@ -65,7 +81,7 @@ class Evaluate {
   }
 
   evaluateCriteria(crt, db) {
-    if (crt !== "M_CRITERIA" || crt !== "S_CRITERIA") {
+    if (crt.type !== "M_CRITERIA" && crt.type !== "S_CRITERIA") {
       /* TODO: Should throw error instead of null */
       return null;  
     }
@@ -153,13 +169,55 @@ class Evaluate {
         }
       }
     }
+    this._db = result
+    //return result;
+  }
 
-    return result;
+  evaluateDisplay() {
+    if (this._node.type !== "DISPLAY") {
+      return null;
+    }
+    
+    let displayKeys = {};
+    for (let displayKey of this._node.value) {
+      displayKeys[KEYS[displayKey.value[0].value]] = true;
+    }
+
+    let result = {};
+    for (let file in this._db) {
+      for (let key in this._db[file]) {
+        if (displayKeys[key]) {
+          for (let i = 0; i < this._db[file][key].length; i++) {
+            if (typeof result[key] == 'undefined') {
+              result[key] = []
+            }
+            result[key].push(this._db[file][key][i]);
+          }
+        }
+      }
+    }
+
+    let len = result[KEYS[this._node.value[0].value[0].value]].length;
+    let readableResult = [];
+    for (let i = 0; i < len; i++) {
+      let tmp = {};
+      for (let key in displayKeys) {
+        let validKey = this._datasetKind + "_" + VALID_KEYS[key]
+        tmp[validKey] = result[key][i];
+      }
+      readableResult.push(tmp);
+    }
+    
+    this._db = readableResult;
+    console.log(this._db)
+    console.log(this._node);
+    console.log(this._ast)
   }
 
   eval() {
     while(this.hasMoreNodes()) {
       this.evaluateFilter();
+      this.evaluateDisplay();
       this.nextNode()
     }
   }

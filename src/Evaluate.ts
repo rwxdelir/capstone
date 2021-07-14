@@ -149,7 +149,6 @@ class Evaluate {
         result = this._db;
       }
     }
-
     /* If OR operator was used, append objects from buffer to result */
     if (buffer.length > 0) {
       for (let i = 0; i < buffer.length; i++) {
@@ -160,7 +159,8 @@ class Evaluate {
           } else {
             for (let tmpKey in tmp[file]) {
               for (let tmpId in tmp[file][tmpKey]) {
-                if (typeof result[tmpKey][tmpId] == "undefined") {
+                if (typeof result[file][tmpKey] == undefined &&
+                    typeof result[file][tmpKey][tmpId] == "undefined") {
                   result[file][tmpKey][tmpId] = tmp[file][tmpKey][tmpId];
                 }
               }
@@ -169,15 +169,20 @@ class Evaluate {
         }
       }
     }
+
     this._db = result
-    //return result;
   }
 
   evaluateDisplay() {
     if (this._node.type !== "DISPLAY") {
       return null;
     }
-    
+
+    if (Object.entries(this._db).length == 0) {
+      this._db = [];
+      return null;
+    }
+
     let displayKeys = {};
     for (let displayKey of this._node.value) {
       displayKeys[KEYS[displayKey.value[0].value]] = true;
@@ -209,17 +214,53 @@ class Evaluate {
     }
     
     this._db = readableResult;
-    console.log(this._db)
-    console.log(this._node);
-    console.log(this._ast)
+  }
+
+  evaluateOrder() {
+    if (this._node.type !== "ORDER") {
+      return null;
+    }
+
+    let sortBy = this._node.value;
+    this._db.sort((a, b) => {
+      for (let i in sortBy) {
+        let cmp = this._datasetKind + "_" + VALID_KEYS[KEYS[sortBy[i].value[0].value]];
+         if (a[cmp] > b[cmp]) {
+          return 1;
+        }
+        if (a[cmp] < b[cmp]) {
+          return -1;
+        }
+      }
+
+      return 0;
+    })
+
+   console.log(this._db)
   }
 
   eval() {
     while(this.hasMoreNodes()) {
       this.evaluateFilter();
       this.evaluateDisplay();
+      this.evaluateOrder();
       this.nextNode()
     }
   }
 }
+
+let q1 = 'In courses dataset courses, find entries whose Average is greater than 97; show Department and Average; sort in ascending order by Average.'
+
+let q2 = 'In courses dataset courses, find entries whose Average is greater than 90 and Department is \"adhe\" or Average is equal to 95; show Department, ID and Average; sort in ascending order by Average.'
+
+let parser = new Parser(q1);      
+let ast;      
+for (let i = 0; i < 3; i++) {      
+  ast = parser.parse(i);      
+}      
+
+let db = require("./coursescache.json");
+
+let evaluate = new Evaluate(db, ast);
+evaluate.eval();
 

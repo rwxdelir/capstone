@@ -236,7 +236,6 @@ class Evaluate {
       return 0;
     })
 
-   console.log(this._db)
   }
 
   eval() {
@@ -248,19 +247,4 @@ class Evaluate {
     }
   }
 }
-
-let q1 = 'In courses dataset courses, find entries whose Average is greater than 97; show Department and Average; sort in ascending order by Average.'
-
-let q2 = 'In courses dataset courses, find entries whose Average is greater than 90 and Department is \"adhe\" or Average is equal to 95; show Department, ID and Average; sort in ascending order by Average.'
-
-let parser = new Parser(q1);      
-let ast;      
-for (let i = 0; i < 3; i++) {      
-  ast = parser.parse(i);      
-}      
-
-let db = require("./coursescache.json");
-
-let evaluate = new Evaluate(db, ast);
-evaluate.eval();
 

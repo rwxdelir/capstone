@@ -30,13 +30,9 @@ class Evaluate {
   _cursor = 0;
   _node;
   _datasetKind;
-  constructor(db, ast) {
-     this._db = db;
+  constructor(ast) {
      this._ast = ast;
      this._node = this._ast[this._cursor];
-
-     /* TODO: Implement DATASET */
-     this._datasetKind = "courses";
   }
 
   nextNode() {
@@ -235,11 +231,35 @@ class Evaluate {
 
       return 0;
     })
+  }
 
+  evaluateDataset() {
+    if (this._node.type !== "DATASET") {
+      return null;
+    }
+
+    if (typeof this._node.value[1].value === 'undefined') {
+      /* TODO: Should return error */
+    }
+
+    this._datasetKind = this._node.value[1].value;
+
+    const dbInitialPath = "./" + this._datasetKind + "cache" + ".json";
+    const fs = require('fs');
+    
+    try {
+      if (fs.existsSync(dbInitialPath)) {
+        this._db = require(dbInitialPath);
+      }
+    } catch (err) {
+      /* TODO: Append error */
+    }
+    
   }
 
   eval() {
     while(this.hasMoreNodes()) {
+      this.evaluateDataset();
       this.evaluateFilter();
       this.evaluateDisplay();
       this.evaluateOrder();

@@ -6,6 +6,7 @@ A **valid** dataset:
 
 ### Response codes
 
+```
 * 204: the operation was successful
 * 400: the operation failed. The body should contain {"error": "my text"}
 addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<InsightResponse>;
@@ -19,9 +20,9 @@ removeDataset(id: string): Promise<InsightResponse>;
 * 400: the query failed; body should contain {"error": "my text"} providing extra detail.
 performQuery(query: any): Promise<InsightResponse>;
 
-* 200: The list of added datasets was sucessfully returned.
+* 200: The list of added datasets was sucessfully returned.                            
 listDatasets(): Promise<InsightResponse>;
-
+```
 ### Tokenization
 
 #### Parsing tokens from query example:
@@ -29,7 +30,7 @@ listDatasets(): Promise<InsightResponse>;
 ```
 In courses dataset courses, find entries whose Average is greater than 97; show Department and Average; sort in ascending order by Average.
 ```
-Result:
+#### Result:
 ```
 [
   {

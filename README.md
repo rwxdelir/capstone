@@ -1,6 +1,4 @@
 ## Dataset 
-
-A **valid** dataset: 
 - Has to be a valid zip file. 
 - Valid data will always be in CSV or XML formats.
 

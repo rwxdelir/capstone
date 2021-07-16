@@ -76,7 +76,7 @@ KEY   ::= M_KEY || S_KEY
 MORE_KEYS   ::= ((', ' + KEY +)* ' and ' + KEY)
 M_KEY ::= 'Average' || 'Pass' || 'Fail' || 'Audit'
 S_KEY ::= 'Department' || 'ID' || 'Instructor' || 'Title' || 'UUID'
-
+```
 ### Query Example
 
 ##### Simple query

@@ -1,4 +1,8 @@
 import {IInsightFacade, InsightResponse, InsightDatasetKind} from "./IInsightFacade";
+import { Lexer } from "./Lexer";
+import { Parser } from "./Parser";
+import { Evaluate } from "./Evaluate"
+
 /**
  * This is main programmatic entry point for the project.
  */
@@ -15,7 +19,7 @@ export default class InsightFacade implements IInsightFacade {
     var fs = require("fs");
 
     return new Promise((resolve, reject) => {
-      fs.readFile("./../courses.zip", function (err, data) {
+      fs.readFile("./../data/test/courses.zip", function (err, data) {
         if (err) throw err;
          var cachedDB = {}, cachedDates = {};
       
@@ -75,7 +79,17 @@ export default class InsightFacade implements IInsightFacade {
   }
 
   public performQuery(query: string): Promise<InsightResponse> {
-    return Promise.resolve({code: 200, body: {result: null}}); 
+    try { 
+      let parser = new Parser(query);
+      let ast = parser.parse() 
+      
+      const evaluate = new Evaluate(ast);
+      const result = evaluate.eval()
+
+      return Promise.resolve({code: 200, body: {result}}); 
+    } catch (err) {
+      return Promise.resolve({code: 404, body: null})
+    }
   }
 
   public listDatasets(): Promise<InsightResponse> {
@@ -103,5 +117,4 @@ function parseData(text: string) {
     firstIndex = 0, secondIndex = 0;
   } return obj;
 }
-
 

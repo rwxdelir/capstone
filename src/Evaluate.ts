@@ -24,7 +24,7 @@ const VALID_KEYS = {
   'id'       : 'uuid'
 }
 
-class Evaluate {
+export class Evaluate {
   _db;
   _ast;
   _cursor = 0;
@@ -265,6 +265,7 @@ class Evaluate {
       this.evaluateOrder();
       this.nextNode()
     }
+
+    return this._db;
   }
 }
-

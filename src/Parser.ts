@@ -157,79 +157,68 @@ export class Parser {
     return ast;
   }
   
-  parse(depth) {
-    let buffer = [];
-    let start
-    let deleteCount = 0;
-    let newType = null;
-    let deep = depth;
-    let level = Spec1[deep];
-    this._cursor = 0;
-    this._token = this._tokens[0]
-
-    if (depth == 0 || depth == 1) {
-      while (!this.isTokenizerEnd()) {
-        for (const [types, genericType] of level) {
-          for (let j = 0; j < types.length; j++) {
-            if (types[j] !== this._token.type) {
-              buffer = [];
-              newType = null;
-              break;  
-            }
-            if (typeof start == 'undefined') {
-              start = this._cursor;
-              newType = genericType;
-            }
-            buffer.push(this._token);
-            this.nextToken();
-          }
-          if (buffer.length > 0) {
-            this._tokens.splice(start, buffer.length, {
-              type: newType,
-              value: buffer
-            })
-            this._cursor = 0;
-            this._token = this._tokens[0];
-            newType = null;
-            buffer = [];
-            start = undefined;
-          }
-        }
-        this.nextToken();
-      }
-    } else {
+  parse() {
+    /* TODO: Eliminate this cycle */
+    for (let depth = 0; depth < 3; depth++) {
+      let buffer = [];
+      let start
+      let deleteCount = 0;
+      let newType = null;
+      let level = Spec1[depth];
       this._cursor = 0;
       this._token = this._tokens[0]
-      let buffer = [];
-      let start, end;
 
-      while (!this.isTokenizerEnd()) {
-        start = this._cursor;
-        let cmd = this.cmdDisplay() || this.cmdFilter() || this.cmdOrder() || this.cmdDataset()  
-        if (cmd) {
-          end = this._cursor
-          this._tokens.splice(start, (end - start), cmd);
-          this._cursor = start;
-          this._token = this._tokens[start];        
+      if (depth == 0 || depth == 1) {
+        while (!this.isTokenizerEnd()) {
+          for (const [types, genericType] of level) {
+            for (let j = 0; j < types.length; j++) {
+              if (types[j] !== this._token.type) {
+                buffer = [];
+                newType = null;
+                break;  
+              }
+              if (typeof start == 'undefined') {
+                start = this._cursor;
+                newType = genericType;
+              }
+              buffer.push(this._token);
+              this.nextToken();
+            }
+            if (buffer.length > 0) {
+              this._tokens.splice(start, buffer.length, {
+                type: newType,
+                value: buffer
+              })
+              this._cursor = 0;
+              this._token = this._tokens[0];
+              newType = null;
+              buffer = [];
+              start = undefined;
+            }
+          }
+          this.nextToken();
         }
-        this.nextToken();
+      } else {
+        this._cursor = 0;
+        this._token = this._tokens[0]
+        let buffer = [];
+        let start, end;
+
+        while (!this.isTokenizerEnd()) {
+          start = this._cursor;
+          let cmd = this.cmdDisplay() || this.cmdFilter() || this.cmdOrder() || this.cmdDataset()  
+          if (cmd) {
+            end = this._cursor
+            this._tokens.splice(start, (end - start), cmd);
+            this._cursor = start;
+            this._token = this._tokens[start];        
+          }
+          this.nextToken();
+        }
+
+        return this.parseAst(this._tokens);
       }
-      return this.parseAst(this._tokens);
     }
   }
 }
-      
-//let q1 = 'In courses dataset courses, find entries whose Average is greater than 97 and Department is \"adhe\"; show Department and Average; sort in ascending order by Average.'
-//let q2 = 'In courses dataset courses, find entries whose Average is greater than 90 and Department is \"adhe\" or Average is equal to 95; show Department, ID and Average; sort in ascending order by Average.'
-//
-//let parser = new Parser(q2);
-//let result;
-//for (let i = 0; i < 3; i++) {
-//  result = parser.parse(i);
-//}
-//var fs = require("fs");
-//fs.writeFileSync('./data.json', JSON.stringify(result, null, 2)); 
-//
-//console.log(result[1].value.value)
-//console.log(result[2].value.value)
-//console.log(result[3].value.value)
+     

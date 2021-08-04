@@ -7,7 +7,15 @@ import { Evaluate } from "./Evaluate"
  * This is main programmatic entry point for the project.
  */
 export default class InsightFacade implements IInsightFacade {
+  static addedDatasets: {
+    id: string; 
+    kind: InsightDatasetKind; 
+    numRows: number
+  }[] = [];
   public addDataset(id: string, content: string, kind: InsightDatasetKind): Promise<InsightResponse> {
+    // TODO: Implemented rows counter for InsightDataset   
+    InsightFacade.addedDatasets.push(
+      {id, kind, numRows: 0})
     var JSZip = require("jszip");
     var zip = new JSZip();
     var fcache = {};
@@ -19,7 +27,7 @@ export default class InsightFacade implements IInsightFacade {
     var fs = require("fs");
 
     return new Promise((resolve, reject) => {
-      fs.readFile("./../data/test/courses.zip", function (err, data) {
+      fs.readFile("./../test/data/courses.zip", function (err, data) {
         if (err) throw err;
          var cachedDB = {}, cachedDates = {};
       
@@ -50,8 +58,9 @@ export default class InsightFacade implements IInsightFacade {
                   resolve({code: 204, body: null});
                 }
             } else {
+
               file.async("string").then(function(text: string) {
-                db[relative] = parseData(text);
+                db[relative] = this.parseData(text);
                 parsedFiles++
                 if (parsedFiles === folderSize) {
                   fs.writeFileSync(cachePath, JSON.stringify(db));
@@ -85,36 +94,45 @@ export default class InsightFacade implements IInsightFacade {
       
       const evaluate = new Evaluate(ast);
       const result = evaluate.eval()
-
-      return Promise.resolve({code: 200, body: {result}}); 
+      let InsightDataset = InsightFacade.addedDatasets;
+      return Promise.resolve({code: 200, body: {result, InsightDataset}}); 
     } catch (err) {
       return Promise.resolve({code: 404, body: null})
     }
   }
 
   public listDatasets(): Promise<InsightResponse> {
-    return Promise.reject({code: -1, body: null}) 
+    let addedDatasets = InsightFacade.addedDatasets;
+    return Promise.reject({code: 200, body: null}) 
+  }
+  
+  public parseData(text: string): any {
+    var word: string;
+    var obj = {"title": [], "id": [], "professor": [], "audit": [],
+        "year": [], "course": [], "pass": [], "fail": [], "avg": [], "subject": [], "section": []}
+    var keys: string[] = ["title", "id", "professor", "audit",
+        "year", "course", "pass", "fail", "avg", "subject", "section"];
+    var firstIndex: number = 0; 
+    var secondIndex: number = 0;
+    var splitText: string[] = text.split('\n');
+
+    for (var j = 1; j < splitText.length; j++) {
+      for (var i = 0; i < splitText[j].split('|').length; i++) {
+          secondIndex = splitText[j].indexOf('|', firstIndex + 1);
+          word = splitText[j].slice(firstIndex, secondIndex).replace("|", "");
+          firstIndex = secondIndex;
+          obj[keys[i]].push(word);
+      }
+      firstIndex = 0, secondIndex = 0;
+    } 
+    return obj;
   }
 }
 
-function parseData(text: string) {
-  var word: string;
-  var obj = {"title": [], "id": [], "professor": [], "audit": [],
-      "year": [], "course": [], "pass": [], "fail": [], "avg": [], "subject": [], "section": []}
-  var keys: string[] = ["title", "id", "professor", "audit",
-      "year", "course", "pass", "fail", "avg", "subject", "section"];
-  var firstIndex: number = 0; 
-  var secondIndex: number = 0;
-  var splitText: string[] = text.split('\n');
-
-  for (var j = 1; j < splitText.length; j++) {
-    for (var i = 0; i < splitText[j].split('|').length; i++) {
-        secondIndex = splitText[j].indexOf('|', firstIndex + 1);
-        word = splitText[j].slice(firstIndex, secondIndex).replace("|", "");
-        firstIndex = secondIndex;
-        obj[keys[i]].push(word);
-    }
-    firstIndex = 0, secondIndex = 0;
-  } return obj;
-}
-
+(async () => {
+  let insightFacade = new InsightFacade;
+  insightFacade.addDataset("courses", "./../test/data/courses.zip", InsightDatasetKind["courses"])
+  let r = await insightFacade.performQuery("In courses dataset courses, find entries whose Average is greater than 97; show Department and Average; sort in ascending order by Average.")
+  console.log(r.body["result"])
+  console.log(r.body["InsightDataset"])
+})()

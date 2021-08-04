@@ -4,11 +4,11 @@ export interface InsightResponse {
 }
 
 export interface InsightResponseSuccessBody {
-  result: any[] | string;
+  result: any[] | string & InsightDataset[];
 }
 
 export interface InsightResponseErrorBody {
-  error: string;
+  error: string | any[];
 }
 
 export enum InsightDatasetKind {
